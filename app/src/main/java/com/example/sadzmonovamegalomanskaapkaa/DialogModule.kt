@@ -2,8 +2,13 @@ package com.example.sadzmonovamegalomanskaapkaa
 
 import DataStoreManager
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.rememberScrollableState
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -28,6 +33,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -41,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.sadzmonovamegalomanskaapkaa.ui.theme.AppTheme
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
@@ -63,7 +70,6 @@ fun DialogModuleChoose()
     var confirm            by rememberSaveable { mutableStateOf( false ) }
 
     if ( showDialog == true ) {
-
         Dialog( onDismissRequest = { showDialog = !showDialog } ) {
             // Draw a rectangle shape with rounded corners inside the dialog
             Card(
@@ -71,7 +77,7 @@ fun DialogModuleChoose()
                     .fillMaxWidth()
                     .height(575.dp)
                     .padding(16.dp),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(16.dp)
             ) {
                 Column(
                     modifier = Modifier

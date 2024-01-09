@@ -1,9 +1,11 @@
 import android.content.Context
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
@@ -14,26 +16,10 @@ class DataStoreManager( private val context: Context ) {
     // to make sure there's only one instance
     companion object {
         private val Context.dataStoree: DataStore<Preferences> by preferencesDataStore("merchant_datastore")
-        val ALARM_0       = stringPreferencesKey("ALARM_0")
-        val ALARM_1       = stringPreferencesKey("ALARM_1")
-        val ALARM_2       = stringPreferencesKey("ALARM_2")
-        val ALARM_3       = stringPreferencesKey("ALARM_3")
-        val DOORBELL_0    = stringPreferencesKey("DOORBELL_0")
-        val DOORBELL_1    = stringPreferencesKey("DOORBELL_1")
-        val DOORBELL_2    = stringPreferencesKey("DOORBELL_2")
-        val DOORBELL_3    = stringPreferencesKey("DOORBELL_3")
-        val KETTLE_0      = stringPreferencesKey("KETTLE_0")
-        val KETTLE_1      = stringPreferencesKey("KETTLE_1")
-        val KETTLE_2      = stringPreferencesKey("KETTLE_2")
-        val KETTLE_3      = stringPreferencesKey("KETTLE_3")
-        val FRIDGE_0      = stringPreferencesKey("FRIDGE_0")
-        val FRIDGE_1      = stringPreferencesKey("FRIDGE_1")
-        val FRIDGE_2      = stringPreferencesKey("FRIDGE_2")
-        val FRIDGE_3      = stringPreferencesKey("FRIDGE_3")
-        val ALARMCOUNT    = stringPreferencesKey("ALARMCOUNT")
-        val DOORBELLCOUNT = stringPreferencesKey("DOORBELLCOUNT")
-        val KETTLECOUNT   = stringPreferencesKey("KETTLECOUNT")
-        val FRIDGECOUNT   = stringPreferencesKey("FRIDGECOUNT")
+        val ALARM_COUNT    = intPreferencesKey("CA")
+        val DOORBELL_COUNT = intPreferencesKey("CD")
+        val FRIDGE_COUNT   = intPreferencesKey("FC")
+        val KETTLE_COUNT   = intPreferencesKey("CK")
     }
 
     //function for getting values from ALARM
@@ -56,12 +42,12 @@ class DataStoreManager( private val context: Context ) {
     {
         val FridgeIndex = stringPreferencesKey("FRIDGE_" + index )
 
-        val getAlarm: Flow<String?> = context.dataStoree.data
+        val getFridge: Flow<String?> = context.dataStoree.data
             .map { preferences ->
                 preferences[ FridgeIndex ] ?: "false"
             }
 
-        return getAlarm.collectAsState(initial = "").value!!.toBoolean()
+        return getFridge.collectAsState(initial = "").value!!.toBoolean()
     }
 
     //function for getting values from KETTLE
@@ -70,12 +56,12 @@ class DataStoreManager( private val context: Context ) {
     {
         val kettleIndex = stringPreferencesKey("KETTLE_" + index)
 
-        val getAlarm: Flow<String?> = context.dataStoree.data
+        val getKettle: Flow<String?> = context.dataStoree.data
             .map { preferences ->
                 preferences[ kettleIndex ] ?: "false"
             }
 
-        return getAlarm.collectAsState(initial = "").value!!.toBoolean()
+        return getKettle.collectAsState(initial = "").value!!.toBoolean()
     }
 
     //function for getting value from DOORBELL
@@ -84,41 +70,58 @@ class DataStoreManager( private val context: Context ) {
     {
         val doorbellIndex = stringPreferencesKey( "DOORBELL_" + index )
 
-        val getAlarm: Flow<String?> = context.dataStoree.data
+        val getDoorbell: Flow<String?> = context.dataStoree.data
             .map { preferences ->
                 preferences[ doorbellIndex ] ?: "false"
             }
 
-        return getAlarm.collectAsState(initial = "").value!!.toBoolean()
+        return getDoorbell.collectAsState(initial = "").value!!.toBoolean()
     }
 
-
-    //function for getting value from ALARMCOUNT
+    //function for getting value from KETTLE_COUNT
     @Composable
-    fun getAlarmCount(): String
+    fun getKettleCount(): Int
     {
-        val alarmCount = stringPreferencesKey( "ALARMCOUNT" )
-
-        val getAlarmCount: Flow<String?> = context.dataStoree.data
+        val getKettleCount: Flow<Int?> = context.dataStoree.data
             .map { preferences ->
-                preferences[ alarmCount ] ?: "0"
+                preferences[ KETTLE_COUNT ] ?: 0
             }
 
-        return getAlarmCount.collectAsState(initial = "").value!!
+        return getKettleCount.collectAsState(initial = 0).value!!
     }
 
-    //function for getting value from ALARMCOUNT
     @Composable
-    fun getDoorbellCount(): String
+    fun getAlarmCount(): Int
     {
-        val alarmCount = stringPreferencesKey( "ALARMCOUNT" )
-
-        val getAlarmCount: Flow<String?> = context.dataStoree.data
+        val getAlarmCount: Flow<Int> = context.dataStoree.data
             .map { preferences ->
-                preferences[ alarmCount ] ?: "0"
+                // No type safety.
+                preferences[ ALARM_COUNT ] ?: 0
             }
 
-        return getAlarmCount.collectAsState(initial = "").value!!
+        return getAlarmCount.collectAsState(initial = 0).value!!
+    }
+    //function for getting value from FRIDGE_COUNT
+    @Composable
+    fun getFridgeCount(): Int
+    {
+        val getFridgeCount: Flow<Int?> = context.dataStoree.data
+            .map { preferences ->
+                preferences[ FRIDGE_COUNT ] ?: 0
+            }
+
+        return getFridgeCount.collectAsState(initial = 0).value!!
+    }
+    //function for getting value from DOORBELL_COUNT
+    @Composable
+    fun getDoorbellCount(): Int
+    {
+        val getDoorbellCount: Flow<Int?> = context.dataStoree.data
+            .map { preferences ->
+                preferences[ DOORBELL_COUNT ] ?: 0
+            }
+
+        return getDoorbellCount.collectAsState(initial = 0).value!!
     }
 
     //save alarm[i] into datastore
@@ -154,10 +157,25 @@ class DataStoreManager( private val context: Context ) {
     }
 
     //save doorbell[i] into
-    suspend fun saveAlarmCount( amount: Int ) {
-        val alarmAmount =  stringPreferencesKey("ALARMCOUNT" )
+
+   suspend fun saveAlarmCount( count: Int ) {
         context.dataStoree.edit { preferences ->
-            preferences[ alarmAmount ] = amount.toString()
+            preferences[ ALARM_COUNT ] = count
+        }
+    }
+    suspend fun saveKettleCount( count: Int ) {
+        context.dataStoree.edit { preferences ->
+            preferences[ KETTLE_COUNT ] = count
+        }
+    }
+    suspend fun saveFridgeCount( count: Int ) {
+        context.dataStoree.edit { preferences ->
+            preferences[ FRIDGE_COUNT ] = count
+        }
+    }
+    suspend fun saveDoorbellCount( count: Int ) {
+        context.dataStoree.edit { preferences ->
+            preferences[ DOORBELL_COUNT ] = count
         }
     }
 }

@@ -1,6 +1,9 @@
+@file:Suppress("IMPLICIT_CAST_TO_ANY")
+
 package com.example.sadzmonovamegalomanskaapkaa
 
 import DataStoreManager
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -69,13 +72,33 @@ fun WidgetShort(
     // we instantiate the dataStore class
     val dataStore = DataStoreManager( context )
 
-    var offsetNow  by remember { mutableStateOf(0f) }
-    var offsetPrev by remember { mutableStateOf(0f) }
-    var position   by remember { mutableStateOf(0)}
+    var offsetNow        by remember { mutableStateOf(0f) }
+    var offsetPrev       by remember { mutableStateOf(0f) }
+    var countOfDevices   by remember { mutableStateOf(420 ) }
 
-    val listState = rememberLazyListState()
+    //Read the values from datastore only when composable occurs.
+    if ( countOfDevices == 420 )
+    {
+        when ( name ) {
+            "Alarm" -> {
+                countOfDevices = dataStore.getAlarmCount()
+                Log.d( "Reading alarm count: ", "$countOfDevices" )
+                }
+            "Kettle" -> {
+                countOfDevices = dataStore.getKettleCount()
+            }
+            "Doorbell" -> {
+                countOfDevices = dataStore.getDoorbellCount()
+            }
+            "Fridge" -> {
+                countOfDevices = dataStore.getFridgeCount()
+            }
+            else -> {
+                Text( text = "Error in name in WidgetShort function." )
+            }
+        }
+    }
 
-    val visibleItemsInfo = listState.layoutInfo
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
@@ -90,13 +113,15 @@ fun WidgetShort(
     {
         //Pictogram of module
         Image(
-            painter            = icon,
+            painter = icon,
             contentDescription = "Pictogram of $name",
             modifier = modifier.then(
-                if ( name == "Fridge" ) {
-                    Modifier.padding( start = 24.dp, top = 16.dp, bottom = 16.dp, end = 16.dp )
-                } else {
-                    Modifier.padding( 16.dp )
+                if (name == "Fridge")
+                {
+                    Modifier.padding(start = 24.dp, top = 16.dp, bottom = 16.dp, end = 16.dp)
+                } else
+                {
+                    Modifier.padding(16.dp)
                 }
             )
         )
@@ -104,8 +129,8 @@ fun WidgetShort(
         Text(
             text     = name,
             fontSize = 28.sp,
-            color = MaterialTheme.colorScheme.scrim,
-            modifier = modifier.padding( end = 16.dp )
+            color    = MaterialTheme.colorScheme.scrim,
+            modifier = modifier.padding(end = 16.dp)
         )
         Box(
             Modifier
@@ -121,75 +146,96 @@ fun WidgetShort(
                 )
                 .background(
                     color = MaterialTheme.colorScheme.background,
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape( 12.dp )
                 ),
             contentAlignment = Alignment.Center
         ) {
-            scope.launch{
-            if ( offsetNow - offsetPrev > 10 && position <= 3)
-            {
-                position = position + 1
-                offsetPrev = offsetNow
-                delay( 100 )
+            scope.launch {
+                //Increase or decrease devices count and changing
+                // the number of activated devices on WidgetShort
+                if ( offsetNow - offsetPrev > 70 && countOfDevices >= 1 )
+                {
+                    countOfDevices = countOfDevices - 1
+                    offsetPrev = offsetNow
+                    offsetNow  = 0f
+                    offsetPrev = 0f
+                    delay(100)
+                }
+                else if ( offsetNow - offsetPrev < -70 && countOfDevices <= 3 )
+                {
+                    countOfDevices = countOfDevices + 1
+                    offsetPrev = offsetNow
+                    offsetNow  = 0f
+                    offsetPrev = 0f
+                    delay(100)
+                }
+                //Resetting offset to 0 or user can go outside of the range
+                if ( offsetNow > 280 || offsetNow < -280 )
+                {
+                    offsetNow  = 0f
+                    offsetPrev = 0f
+                }
             }
-        else if ( offsetNow - offsetPrev < -10 && position >= 1 )
-            {
-                position = position - 1
-                offsetPrev = offsetNow
-                delay( 100 )
-            }
-            }
-            Text(text = "$position")
+            Text( text = "$countOfDevices" )
         }
-
-
-
-/*        LazyColumn (
-            state = listState,
-            horizontalAlignment =  Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-            modifier = Modifier
-                .size(width = 30.dp, height = 30.dp)
-                .background(
-                    MaterialTheme.colorScheme.onBackground,
-                    shape = RoundedCornerShape(8.dp)
-                )
-
-        ){
-            items(5) { index ->
-                Text(
-                    "$index",
-                    fontSize = 28.sp,
-                    color = MaterialTheme.colorScheme.scrim,
-                    )
-                derivedStateOf {
-                    dataStore.saveAlarmCount( index )
-                }
-                //Launch the class in a coroutine scope
-                scope.launch {
-                    delay( 5000 )
-                    dataStore.saveAlarmCount( index )
-                }
-            }
-        }*/
+        Log.i("??? ", "Do ted dobrý")
         //Assigning correct getFunctions to names
-        val count =
-            if( name == "Alarm" )
+        when ( name )
+        {
+            "Alarm" ->
             {
-                dataStore.getAlarmCount()
+                scope.launch {
+                    dataStore.saveAlarmCount( countOfDevices )
+                    delay(100)
+                }
+                Log.d("Saving Alarm: ", "$countOfDevices")
             }
-            else if ( name == "Kettle" )
+            "Kettle" ->
             {
+                scope.launch {
+                    dataStore.saveKettleCount( countOfDevices )
+                    delay(100)
+                }
+                //Log.w("Saving Kettle: ", "$countOfDevices")
+            }
+            "Doorbell" ->
+            {
+                scope.launch {
+                    dataStore.saveDoorbellCount( countOfDevices )
+                    delay(100)
+                }
+                //Log.e("Saving Doorbell: ", "$countOfDevices")
+            }
+            "Fridge" ->
+            {
+                scope.launch {
+                    dataStore.saveFridgeCount( countOfDevices )
+                    delay(100)
+                }
+                //Log.i("Saving Fridge: ", "$countOfDevices")
+            }
 
+            else -> {
+                Log.e("WidgetShort ", "Wrong name for saving counts.")
+                }
             }
-            else
-            {
-
-            }
+        Log.d("Widget short", "")
     }
-    Row (Modifier.padding(top= 100.dp)){
-        Text(text = "OffsetNow = $offsetNow")
-        Text(text = "OffsetPrev = $offsetPrev")
+
+    Column {
+        val infoA = dataStore.getAlarmCount()
+        val infoK = dataStore.getKettleCount()
+        val infoD = dataStore.getDoorbellCount()
+        val infoF = dataStore.getFridgeCount()
+
+        Row( Modifier.padding( top = 100.dp ) ) {
+            Text(text = "Offset now = $offsetNow")
+            Text(text = "Offset prev = $offsetPrev")
+        }
+            Text(text = "Alarm count = $infoA")
+            Text(text = "Kettle count = $infoK")
+            Text(text = "Doorbell count = $infoD")
+            Text(text = "Fridge count = $infoF")
     }
 }
 
@@ -197,7 +243,7 @@ fun WidgetShort(
 @Preview
 fun Preview()
 {
-    var swl = true
+    val swl = true
     AppTheme {
         WidgetShort(
             selected = swl,
@@ -206,4 +252,3 @@ fun Preview()
         )
     }
 }
-
