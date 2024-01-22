@@ -1,6 +1,8 @@
 package com.example.sadzmonovamegalomanskaapkaa
+//Svihnout tam int aby se to zavrelo o kolo pozdejs
 
 import DataStoreManager
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -69,6 +71,46 @@ fun DialogModuleChoose()
     var activateMainScreen by rememberSaveable { mutableStateOf( false ) }
     var confirm            by rememberSaveable { mutableStateOf( false ) }
 
+    var confirm_count by rememberSaveable { mutableStateOf( 0 ) }
+    var checkSum by rememberSaveable { mutableStateOf( true ) }
+
+    //Set initial state to false.
+    if ( checkSum == true )
+    {
+        scope.launch {
+            dataStore.saveSaveState( false )
+        }
+        checkSum = false
+    }
+
+
+    if ( confirm == true )
+    {
+        confirm_count = confirm_count + 1
+        Log.i("Confirms: ", "$confirm_count")
+        if ( confirm_count == 2 )
+        {
+            scope.launch {
+                dataStore.saveSaveState( true )
+            }
+            confirm = false
+            confirm_count = 0
+            showDialog = !showDialog
+        }
+    }
+    
+    var info            by rememberSaveable { mutableStateOf( 0 ) }
+    var savee           by rememberSaveable { mutableStateOf( false ) }
+    info  = dataStore.getAlarmCount()
+    savee = dataStore.getSaveState()
+
+
+    Column {
+        Text(text = "AlarmCount = $info")
+        Text(text = "AlarmCount = $savee")
+    }
+
+
     if ( showDialog == true ) {
         Dialog( onDismissRequest = { showDialog = !showDialog } ) {
             // Draw a rectangle shape with rounded corners inside the dialog
@@ -122,6 +164,7 @@ fun DialogModuleChoose()
                             name = "Doorbell",
                             modifier = Modifier.clickable { selectedDoorbell = !selectedDoorbell }
                         )
+                        Log.e( "Widget recomposition:", "Works?" )
                     }
                     Row(
                         modifier = Modifier
@@ -139,9 +182,9 @@ fun DialogModuleChoose()
                         }
                         TextButton(
                             onClick = {
-                                showDialog = !showDialog
-                                activateMainScreen = true
                                 confirm = !confirm
+                                activateMainScreen = true,
+                                
                             },
                             modifier = Modifier.padding(8.dp),
                         ) {
@@ -152,11 +195,8 @@ fun DialogModuleChoose()
                         }
                     }
                 }
+
             }
-        }
-        //launch the class in a coroutine scope
-        scope.launch {
-            dataStore.saveAlarm( 0, selectedAlarm.toString() )
         }
     }
 
@@ -201,7 +241,7 @@ fun DialogModuleChoose()
                 modifier = Modifier.size( 80.dp ),  //avoid the oval shape
                 shape    = CircleShape,
                 border   = BorderStroke( 1.dp, MaterialTheme.colorScheme.primary ),
-                contentPadding = PaddingValues(0.dp),  //avoid the little icon
+                contentPadding = PaddingValues( 0.dp ),  //avoid the little icon
                 colors   = ButtonDefaults.buttonColors( MaterialTheme.colorScheme.primary ),
             ) {
                 Text(

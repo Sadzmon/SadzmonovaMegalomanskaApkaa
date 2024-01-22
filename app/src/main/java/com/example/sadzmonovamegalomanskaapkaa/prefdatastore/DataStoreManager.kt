@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -16,10 +17,24 @@ class DataStoreManager( private val context: Context ) {
     // to make sure there's only one instance
     companion object {
         private val Context.dataStoree: DataStore<Preferences> by preferencesDataStore("merchant_datastore")
-        val ALARM_COUNT    = intPreferencesKey("CA")
+        val ALARM_COUNT = intPreferencesKey("CA")
         val DOORBELL_COUNT = intPreferencesKey("CD")
-        val FRIDGE_COUNT   = intPreferencesKey("FC")
-        val KETTLE_COUNT   = intPreferencesKey("CK")
+        val FRIDGE_COUNT = intPreferencesKey("FC")
+        val KETTLE_COUNT = intPreferencesKey("CK")
+        val SAVE = booleanPreferencesKey("save")
+    }
+
+    //Saving Save state
+    @Composable
+    fun getSaveState(): Boolean
+    {
+        val saveState: Flow<Boolean?> = context.dataStoree.data
+            .map { preferences ->
+                preferences[ SAVE ] ?: false
+            }
+        val save = saveState.collectAsState(initial = false).value!!
+        Log.w("Getting: ", "$save")
+        return saveState.collectAsState(initial = false).value!!
     }
 
     //function for getting values from ALARM
@@ -98,8 +113,7 @@ class DataStoreManager( private val context: Context ) {
                 // No type safety.
                 preferences[ ALARM_COUNT ] ?: 0
             }
-
-        return getAlarmCount.collectAsState(initial = 0).value!!
+        return getAlarmCount.collectAsState(initial = 0).value
     }
     //function for getting value from FRIDGE_COUNT
     @Composable
@@ -122,6 +136,15 @@ class DataStoreManager( private val context: Context ) {
             }
 
         return getDoorbellCount.collectAsState(initial = 0).value!!
+    }
+
+    //Saving save state
+    suspend fun saveSaveState( value: Boolean )
+    {
+        Log.i("SAVING:","$value")
+        context.dataStoree.edit { preferences ->
+            preferences[ SAVE ] = value
+        }
     }
 
     //save alarm[i] into datastore
@@ -159,6 +182,7 @@ class DataStoreManager( private val context: Context ) {
     //save doorbell[i] into
 
    suspend fun saveAlarmCount( count: Int ) {
+       Log.e("Doorbell count:","$count")
         context.dataStoree.edit { preferences ->
             preferences[ ALARM_COUNT ] = count
         }

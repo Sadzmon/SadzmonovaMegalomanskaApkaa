@@ -4,6 +4,7 @@ package com.example.sadzmonovamegalomanskaapkaa
 
 import DataStoreManager
 import android.util.Log
+import android.widget.NumberPicker.OnValueChangeListener
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -62,39 +63,45 @@ fun WidgetShort(
         {
             MaterialTheme.colorScheme.secondary
         },
-    modifier: Modifier = Modifier,
-
-){
+    modifier: Modifier = Modifier
+) {
     //context
     val context = LocalContext.current
     // a coroutine scope
     val scope = rememberCoroutineScope()
     // we instantiate the dataStore class
-    val dataStore = DataStoreManager( context )
+    val dataStore = DataStoreManager(context)
 
-    var offsetNow        by remember { mutableStateOf(0f) }
-    var offsetPrev       by remember { mutableStateOf(0f) }
-    var countOfDevices   by remember { mutableStateOf(420 ) }
+    var offsetNow by remember { mutableStateOf(0f) }
+    var offsetPrev by remember { mutableStateOf(0f) }
+    var countOfDevices by remember { mutableStateOf(420) }
+
+    var save by remember { mutableStateOf(false) }
+    save = dataStore.getSaveState()
+    Log.e("Save:", "$save")
 
     //Read the values from datastore only when composable occurs.
-    if ( countOfDevices == 420 )
-    {
-        when ( name ) {
+    if (countOfDevices == 420) {
+        when (name) {
             "Alarm" -> {
                 countOfDevices = dataStore.getAlarmCount()
-                Log.d( "Reading alarm count: ", "$countOfDevices" )
-                }
-            "Kettle" -> {
-                countOfDevices = dataStore.getKettleCount()
+                Log.d("Reading alarm count: ", "$countOfDevices")
             }
+
+            "Kettle" -> {
+                countOfDevices = dataStore.getKettleCount();
+            }
+
             "Doorbell" -> {
                 countOfDevices = dataStore.getDoorbellCount()
             }
+
             "Fridge" -> {
                 countOfDevices = dataStore.getFridgeCount()
             }
+
             else -> {
-                Text( text = "Error in name in WidgetShort function." )
+                Text(text = "Error in name in WidgetShort function.")
             }
         }
     }
@@ -116,20 +123,18 @@ fun WidgetShort(
             painter = icon,
             contentDescription = "Pictogram of $name",
             modifier = modifier.then(
-                if (name == "Fridge")
-                {
+                if (name == "Fridge") {
                     Modifier.padding(start = 24.dp, top = 16.dp, bottom = 16.dp, end = 16.dp)
-                } else
-                {
+                } else {
                     Modifier.padding(16.dp)
                 }
             )
         )
         //Module name
         Text(
-            text     = name,
+            text = name,
             fontSize = 28.sp,
-            color    = MaterialTheme.colorScheme.scrim,
+            color = MaterialTheme.colorScheme.scrim,
             modifier = modifier.padding(end = 16.dp)
         )
         Box(
@@ -146,41 +151,81 @@ fun WidgetShort(
                 )
                 .background(
                     color = MaterialTheme.colorScheme.background,
-                    shape = RoundedCornerShape( 12.dp )
+                    shape = RoundedCornerShape(12.dp)
                 ),
             contentAlignment = Alignment.Center
         ) {
             scope.launch {
                 //Increase or decrease devices count and changing
                 // the number of activated devices on WidgetShort
-                if ( offsetNow - offsetPrev > 70 && countOfDevices >= 1 )
-                {
+                if (offsetNow - offsetPrev > 70 && countOfDevices >= 1) {
                     countOfDevices = countOfDevices - 1
                     offsetPrev = offsetNow
-                    offsetNow  = 0f
+                    offsetNow = 0f
                     offsetPrev = 0f
                     delay(100)
-                }
-                else if ( offsetNow - offsetPrev < -70 && countOfDevices <= 3 )
-                {
+                } else if (offsetNow - offsetPrev < -70 && countOfDevices <= 3) {
                     countOfDevices = countOfDevices + 1
                     offsetPrev = offsetNow
-                    offsetNow  = 0f
+                    offsetNow = 0f
                     offsetPrev = 0f
                     delay(100)
                 }
                 //Resetting offset to 0 or user can go outside of the range
-                if ( offsetNow > 280 || offsetNow < -280 )
-                {
-                    offsetNow  = 0f
+                if (offsetNow > 280 || offsetNow < -280) {
+                    offsetNow = 0f
                     offsetPrev = 0f
                 }
             }
-            Text( text = "$countOfDevices" )
+            Text(text = "$countOfDevices")
         }
+        Log.i("Save:", "$save")
+
+        if (save == true) {
+            Log.e("Widget short", "Am I here???")
+            Log.w("Count of devices?", "$countOfDevices")
+            when (name) {
+                "Alarm" -> {
+                    scope.launch {
+                        dataStore.saveAlarmCount( countOfDevices )
+                    }
+                    Log.d("Saving Alarm: ", "$countOfDevices")
+                }
+
+                "Kettle" -> {
+                    scope.launch {
+                        dataStore.saveKettleCount(countOfDevices)
+                    }
+                    //Log.w("Saving Kettle: ", "$countOfDevices")
+                }
+
+                "Doorbell" -> {
+                    scope.launch {
+                        dataStore.saveDoorbellCount(countOfDevices)
+                    }
+                    //Log.e("Saving Doorbell: ", "$countOfDevices")
+                }
+
+                "Fridge" -> {
+                    scope.launch {
+                        dataStore.saveFridgeCount(countOfDevices)
+                    }
+                    //Log.i("Saving Fridge: ", "$countOfDevices")
+                }
+
+                else -> {
+                    Log.e("WidgetShort ", "Wrong name for saving counts.")
+                }
+            }
+            scope.launch {
+                dataStore.saveSaveState(false)
+            }
+        }
+    }
         Log.i("??? ", "Do ted dobrý")
+
         //Assigning correct getFunctions to names
-        when ( name )
+        /*when ( name )
         {
             "Alarm" ->
             {
@@ -219,36 +264,23 @@ fun WidgetShort(
                 Log.e("WidgetShort ", "Wrong name for saving counts.")
                 }
             }
+    }*/
         Log.d("Widget short", "")
-    }
 
-    Column {
-        val infoA = dataStore.getAlarmCount()
-        val infoK = dataStore.getKettleCount()
-        val infoD = dataStore.getDoorbellCount()
-        val infoF = dataStore.getFridgeCount()
+        Column {
+            val infoA = dataStore.getAlarmCount()
+            val infoK = dataStore.getKettleCount()
+            val infoD = dataStore.getDoorbellCount()
+            val infoF = dataStore.getFridgeCount()
 
-        Row( Modifier.padding( top = 100.dp ) ) {
-            Text(text = "Offset now = $offsetNow")
-            Text(text = "Offset prev = $offsetPrev")
-        }
+            Row(Modifier.padding(top = 100.dp)) {
+                Text(text = "Offset now = $offsetNow")
+                Text(text = "Offset prev = $offsetPrev")
+            }
             Text(text = "Alarm count = $infoA")
             Text(text = "Kettle count = $infoK")
             Text(text = "Doorbell count = $infoD")
             Text(text = "Fridge count = $infoF")
-    }
-}
 
-@Composable
-@Preview
-fun Preview()
-{
-    val swl = true
-    AppTheme {
-        WidgetShort(
-            selected = swl,
-            icon = painterResource(id = R.drawable.doorbell),
-            name = "Doorbell"
-        )
     }
 }
